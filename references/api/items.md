@@ -34,7 +34,7 @@
 | ✅ | siteId | `MLM`/`MLB`/`MLC`/`MLA`/`MCO`，默认 `MLM` |
 | | 分页 | pageNo（1）/ pageSize（50） |
 | | 定位条件 | sellerId（店铺ID）、title（标题关键词）、categoryId（类目ID）、skuId |
-| | 卖家/仓储 | storageType（`FULL`/`CBT,LOCAL`）、sellerType（`LOCAL`本土/`CBT`跨境）、isUsaFull（美国转运仓，默认 true） |
+| | 卖家/仓储 | storageType（`FULL`/`CBT,LOCAL`）、sellerType（`LOCAL`本土/`CBT`跨境）、isUsaFull（美国转运仓，**脚本默认 false**，传 `--is-usa-full true` 才开启） |
 | | 跟卖/时间 | follow（0=非/1=跟卖）、startTimeAdded（15/30/60/90/180/365 天内上架）、startTimeBegin/End（`YYYY-MM-DD`）、itemStatus（`active`/`paused`） |
 | | 数值区间 | priceBegin/End、commentBegin/End、soldTotalBegin/End、sale30Start/End、sale30RangeStart/End、weightStart/End（g）、scoreStart/End |
 | | 排序 | sortKey（`sale7`/`sale30`/`saleTotal`/`amount30`）+ sortOrder（`asc`/`desc`） |
