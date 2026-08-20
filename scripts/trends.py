@@ -193,7 +193,7 @@ def main():
   %(prog)s --token YOUR_TOKEN --type sale_list --site MLM --category-id MLM458037 --month 202608
         """
     )
-    parser.add_argument("--token", default=None, help="Authorization Token")
+    parser.add_argument("--token", default=None, help="Authorization Token。⚠️ [不推荐] 会暴露在 shell 历史/进程列表；优先使用环境变量 LJXP_TOKEN")
     parser.add_argument("--type", required=True, choices=list(TYPE_MAP.keys()),
                         help="趋势查询类型")
     parser.add_argument("--site", default="MLM", choices=VALID_SITES, help="站点")

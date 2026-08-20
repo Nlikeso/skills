@@ -158,7 +158,7 @@ def main():
   %(prog)s --token YOUR_TOKEN --item-id MLB123456789 --all
         """
     )
-    parser.add_argument("--token", default=None, help="Authorization Token (也可通过环境变量 LJXP_TOKEN)")
+    parser.add_argument("--token", default=None, help="Authorization Token (也可通过环境变量 LJXP_TOKEN)。⚠️ [不推荐] 会暴露在 shell 历史/进程列表；优先使用环境变量 LJXP_TOKEN")
     parser.add_argument("--item-id", required=True, help="商品ID (必填)")
     parser.add_argument("--product-id", default=None, help="目录链接ID (可选)")
 

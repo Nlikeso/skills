@@ -1,8 +1,51 @@
 ---
 name: "ljxp"
-description: "使用蓝鲸选品 API 和本地脚本分析 Mercado Libre 商品、类目、关键词、价格、竞品、店铺、品牌、目录链接、运费和汇率。"
-version: "2.0.0"
+description: "蓝鲸选品助手是由深圳领东时代科技有限公司(https://www.lingdongsz.com/)推出的美客多官方SPN认证数据选品运营分析Skill，全面覆盖墨西哥、巴西、阿根廷、智利、哥伦比亚站点。支持调用蓝鲸选品 API 结合本地脚本，一站式获取美客多商品、类目、关键词、定价、竞品动态、店铺、品牌、目录链接、运费、汇率多维数据，助力美客多选品精细化运营。"
+version: "2.1.0"
 author: "蓝鲸选品"
+# ===== ClawHub Permission Declaration（SkillSpector 审核必需）=====
+# 每项 permission 均为"最小必需 + 精确到域名/路径"，无 wildcard。
+# 如果修改了脚本的读写范围或新增域名，请同步更新此声明。
+permissions:
+  # 鉴权：仅读取 LJXP_TOKEN 环境变量（蓝鲸选品 Token），不读取其他敏感 env
+  env:
+    - name: LJXP_TOKEN
+      purpose: "蓝鲸选品 API Authorization Bearer Token"
+  # 出站网络：严格限定蓝鲸选品两个官方域名（API 服务 + Skill 服务页面）
+  network:
+    - type: outbound
+      host: "xpskills.lingdongsz.com"
+      scheme: https
+      path: "/api/*"
+      purpose: "调用商品/类目/关键词/店铺/趋势/目录/运费/汇率/用户套餐 API"
+    - type: outbound
+      host: "xp.lingdongsz.com"
+      scheme: https
+      path: "/#/skillServer"
+      purpose: "用户获取 Token、充值续费、联系客服的入口链接（仅在回复里展示给用户，脚本不主动请求）"
+  # 本地文件读：只读取技能包自身 assets（参考文档、Python 脚本、HTML 模板、类目树缓存）
+  filesystem:
+    read:
+      - path: "references/api/*.md"
+        scope: "skill_package"
+        purpose: "Step3 调脚本前阅读各模块接口参数、积分、字段含义"
+      - path: "scripts/*.py"
+        scope: "skill_package"
+        purpose: "AI 读取 Python 脚本的 argparse 定义，核对 CLI 参数映射"
+      - path: "references/search_results_template.html"
+        scope: "skill_package"
+        purpose: "HTML 输出时读取可视化模板（不执行远程 JS）"
+      - path: "cache/category_tree_<site>.json"
+        scope: "skill_package"
+        purpose: "读取 7 天缓存的类目树，命中时免费，避免重复扣积分"
+    # 本地文件写：类目树缓存写在技能包内；HTML 结果写到用户工作目录（需用户知悉）
+    write:
+      - path: "cache/category_tree_<site>.json"
+        scope: "skill_package"
+        purpose: "类目树首次拉取后写入本地缓存，TTL 7 天；--refresh 时覆盖"
+      - path: "ljxp_search_<timestamp>.html"
+        scope: "user_workspace"
+        purpose: "用户选择 --output html 时，把搜索结果表格写入用户工作目录；脚本不自动打开浏览器，删除提醒见 stdout"
 ---
 
 # 蓝鲸选品
@@ -12,7 +55,9 @@ Mercado Libre 选品调研工具。**先澄清意图再调用脚本**（API 消�
 ## 前置要求
 
 - Authorization Token（配置 `LJXP_TOKEN` 环境变量或用户提供）；**不要在回复中暴露 Token ;** 
+- ⚠️ **CLI Token 暴露警告（Finding 4 合规）**：禁止推荐 `--token <TKN>` 作为首选。`--token` 会出现在 shell 历史（`bash_history` / `PSReadLine`）、`ps` / `tasklist` 进程列表、crontab 日志、共享终端会话中，导致他人用你的额度消费积分、读取账号范围数据。**只推荐 `LJXP_TOKEN` 环境变量**。如需在说明中举例 `--token`，必须紧接一句"⚠️ 此方式不安全，仅作调试用，生产请用环境变量 LJXP_TOKEN"。
 - 用户未提供 Token 时，将 Token 获取入口发给用户：<https://xp.lingdongsz.com/#/skillServer>  （蓝鲸选品 Skill 服务页；官网 <https://www.lingdongsz.com/）>
+- 积分不足/套餐用尽时同样发续费入口：<https://xp.lingdongsz.com/#/skillServer>
 - 支持站点：`MLM`、`MLB`、`MLC`、`MLA`、`MCO`
 - API 基础：`https://xpskills.lingdongsz.com/api`；脚本使用 Python 标准库
 
@@ -108,7 +153,7 @@ Step1 确认需求 → Step2 选功能 → Step3 查参考文档 → Step4 调�
 
 ## 调用红线（空结果 / 异常处理）
 
-**触发条件**：当AI认为接口或者python脚本有问题时
+**触发条件**：当AI对接口或脚本有疑惑并想通过调用接口来查找错误时
 
 **处理顺序（跳过任何一步都算违规）**：
 
@@ -123,7 +168,7 @@ Step1 确认需求 → Step2 选功能 → Step3 查参考文档 → Step4 调�
 
 ## Step4 常用脚本路径
 
-> 🛑 先读上方「调用红线」：空/异常数据禁止自动改参数重调烧积分，停 → 查文档 → 给原因+预估 → 等同意。
+> 🛑 先读上方「调用红线」：空/异常禁止自动改参数重调烧积分，停 → 查文档 → 给原因+预估 → 等同意。
 
 类目树：`scripts/category_tree.py` ｜ 商品搜索/详情：`scripts/search_items.py` / `scripts/get_item_info.py` ｜ 店铺：`scripts/search_sellers.py` ｜ 热搜词：`scripts/search_keywords.py` ｜ 目录链接：`scripts/catalog_search.py` ｜ 行业趋势：`scripts/trends.py`（各模块文档中有详细对应路径）
 
@@ -135,7 +180,7 @@ Step1 确认需求 → Step2 选功能 → Step3 查参考文档 → Step4 调�
 
 关键数据（核心指标一句话）｜ 机会等级（推荐/谨慎/暂不建议）｜ 主要风险（2-3条）｜ 推荐动作（明确下一步）｜ 筛选条件/脚本（可复现）｜ 需补充信息（如有）
 
-> 套餐查询输出规范详见 `references/api/users.md`：先用户信息(nickName+phoneNo)→套餐列表→汇总积分；`tcCount`/`useCount` 必须读作「积分」禁止说「次数」。
+> 套餐查询输出规范详见 `references/api/users.md`：**先用户信息(nickName + 脱敏 phoneNo)→套餐列表→汇总积分；`tcCount`/`useCount` 必须读作「积分」禁止说「次数」。** phoneNo 默认打码（如 `138****8888`），**仅在用户消息里明确写「请完整显示我的手机号」时才输出全文**（Finding 5 隐私合规）。
 
 ## Step7 积分消耗统计（每次结尾必附）
 

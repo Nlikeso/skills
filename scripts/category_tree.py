@@ -308,7 +308,7 @@ def main():
         """
     )
     parser.add_argument("--token", default=None,
-                        help="【鉴权，仅真正请求后端时用】Authorization Token（缓存命中时可省略）")
+                        help="【鉴权，仅真正请求后端时用】Authorization Token（缓存命中时可省略）。⚠️ [不推荐] 会暴露在 shell 历史/进程列表；优先用环境变量 LJXP_TOKEN")
     parser.add_argument("--site", default="MLM", choices=VALID_SITES,
                         help="【传给后端 siteId】站点，默认 MLM。"
                              "这是唯一会透传到 /category/tree 接口的参数。")

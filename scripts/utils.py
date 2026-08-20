@@ -10,8 +10,7 @@
 import json
 import os
 import sys
-import tempfile
-import webbrowser
+import time
 import urllib.request
 import urllib.error
 
@@ -35,21 +34,28 @@ SITE_CURRENCIES = {
 
 
 def get_token(args_token=None):
-    """获取 Authorization Token，优先级：命令行参数 > 环境变量 LJXP_TOKEN"""
+    """获取 Authorization Token，优先级：命令行参数 > 环境变量 LJXP_TOKEN。
+    ⚠️  安全提示：通过 --token <值> 传入会暴露在 shell 历史、进程列表、日志。优先使用环境变量。
+    """
+    use_cli = bool(args_token)
     token = args_token or os.environ.get("LJXP_TOKEN")
     if not token:
         print("错误: 未提供 Authorization Token！", file=sys.stderr)
         print("", file=sys.stderr)
         print("获取方式:", file=sys.stderr)
-        print("  1. 使用 --token 参数传入", file=sys.stderr)
-        print("  2. 设置环境变量: export LJXP_TOKEN=<your_token>", file=sys.stderr)
+        print("  1. [推荐] 设置环境变量: export LJXP_TOKEN=<your_token>", file=sys.stderr)
+        print("     (Windows: $env:LJXP_TOKEN=\"<your_token>\" 或 set LJXP_TOKEN=<your_token>)", file=sys.stderr)
+        print("  2. 使用 --token 参数传入（⚠️ 不安全，会暴露在 shell 历史/进程列表）", file=sys.stderr)
         print("", file=sys.stderr)
-        print("Token 可在蓝鲸选品平台获取。", file=sys.stderr)
+        print("👉 Token 可在蓝鲸选品 Skill 服务页获取: https://xp.lingdongsz.com/#/skillServer", file=sys.stderr)
         sys.exit(1)
+    if use_cli:
+        print("⚠️  [警告] 当前使用 --token CLI 参数传递 Token。此方式会在 shell 历史、ps 进程列表、共享终端日志中暴露。", file=sys.stderr)
+        print("    建议改用环境变量 LJXP_TOKEN 传入以避免泄露。", file=sys.stderr)
     return token
 
 
-def request_get(path, token, params=None, timeout=30):
+def request_get(path, token, params=None, timeout=60):
     """发送 GET 请求"""
     url = BASE_URL + path
     if params:
@@ -79,7 +85,7 @@ def request_get(path, token, params=None, timeout=30):
         sys.exit(1)
 
 
-def request_post(path, token, body, timeout=30):
+def request_post(path, token, body, timeout=60):
     """发送 POST 请求"""
     url = BASE_URL + path
     headers = {
@@ -201,7 +207,9 @@ def print_keyword_brief(kw, index=1):
 
 def output_html(response, search_params, template_path=None):
     """
-    将搜索结果渲染为 HTML 页面并在浏览器中打开。
+    将搜索结果渲染为 HTML 文件写入当前工作目录（=用户工作区）。
+    ⚠️  不再自动打开浏览器：防止在更丰富的浏览器执行环境中意外暴露敏感业务数据或加载活跃内容。
+    ⚠️  文件持久化提醒：此文件含 API 返回数据和搜索参数，用户需知悉并自行决定删除时机。
 
     Args:
         response: API 返回的完整响应 JSON 对象

@@ -40,7 +40,7 @@ def main():
   day   - 按日查询热搜词
         """
     )
-    parser.add_argument("--token", default=None, help="Authorization Token")
+    parser.add_argument("--token", default=None, help="Authorization Token。⚠️ [不推荐] 会暴露在 shell 历史/进程列表；优先使用环境变量 LJXP_TOKEN")
     parser.add_argument("--site", default="MLM", choices=VALID_SITES, help="站点")
     parser.add_argument("--search-type", required=True, choices=VALID_SEARCH_TYPES,
                         help="查询类型: month(按月), day(按日)")

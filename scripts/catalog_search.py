@@ -74,7 +74,7 @@ def main():
   %(prog)s --token YOUR_TOKEN --product-id PROD123456 --daily
         """
     )
-    parser.add_argument("--token", default=None, help="Authorization Token")
+    parser.add_argument("--token", default=None, help="Authorization Token。⚠️ [不推荐] 会暴露在 shell 历史/进程列表/共享终端日志；优先使用环境变量 LJXP_TOKEN 传入")
 
     # 搜索模式
     parser.add_argument("--site", default=None, choices=VALID_SITES, help="站点")

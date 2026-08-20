@@ -48,7 +48,7 @@ def main():
   silver   - 白银
         """
     )
-    parser.add_argument("--token", default=None, help="Authorization Token")
+    parser.add_argument("--token", default=None, help="Authorization Token。⚠️ [不推荐] 会暴露在 shell 历史/进程列表；优先使用环境变量 LJXP_TOKEN")
     parser.add_argument("--page-no", type=int, default=1, help="页码 (默认: 1)")
     parser.add_argument("--page-size", type=int, default=50, help="每页条数 (默认: 50)")
     parser.add_argument("--site", default="MLM", choices=VALID_SITES, help="站点")

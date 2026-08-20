@@ -87,7 +87,7 @@ Token 也可通过环境变量 LJXP_TOKEN 传入，无需每次敲 --token。
     )
 
     # 必填参数
-    parser.add_argument("--token", default=None, help="Authorization Token (也可通过环境变量 LJXP_TOKEN 传入)")
+    parser.add_argument("--token", default=None, help="Authorization Token (也可通过环境变量 LJXP_TOKEN 传入)。⚠️ [不推荐] 会暴露在 shell 历史/进程列表；优先使用环境变量 LJXP_TOKEN")
 
     # 分页参数
     parser.add_argument("--page-no", type=int, default=1, help="当前页码 (默认: 1)")
